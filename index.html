@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Reckoning — Acerto de Contas</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0d12">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1016; --panel:#0f1420; --panel-2:#0c111b; --stroke:#1b2333;
+  --brand:#ffd54f; --accent:#ff7043; --text:#e6edf3; --muted:#9aa7b7;
+  --ok:#21e6a1;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Arial,sans-serif}
+img{max-width:100%;height:auto}
+header.site{position:sticky;top:0;background:linear-gradient(180deg,#0c111b,#0b1016);border-bottom:1px solid var(--stroke);z-index:50}
+.header-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:8px 12px}
+.logo-wrap img{height:36px}
+.brand{font-family:Orbitron,sans-serif;font-weight:900;color:var(--brand);letter-spacing:.4px}
+.container{max-width:1100px;margin:12px auto;padding:0 12px}
+.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}
+@media (max-width:880px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--stroke);border-radius:14px}
+.panel-header{padding:12px;border-bottom:1px solid var(--stroke);display:flex;justify-content:space-between;align-items:center}
+.panel-header h2{margin:0;font-family:Orbitron;color:var(--brand);font-size:18px}
+.panel-body{padding:12px}
+.note{color:var(--muted);font-size:13px}
+.result{color:var(--ok);font-weight:800}
+
+.tabs{display:flex;gap:8px;margin-bottom:8px}
+.tab{padding:8px 10px;border-radius:10px;border:1px solid var(--stroke);background:var(--panel-2);cursor:pointer;font-weight:700}
+.tab.active{border-color:#2a354e;box-shadow:0 0 0 2px #1f2b45 inset}
+
+.map-wrap{position:relative;border-radius:12px;border:1px solid var(--stroke);overflow:hidden}
+.hotspot-layer{position:absolute;inset:0;pointer-events:none}
+.hotspot{position:absolute;width:18px;height:18px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;border:2px solid #000;background:#ffd54f}
+.hotspot::before{content:'';position:absolute;inset:-10px;border-radius:50%;animation:pulse 1.6s infinite;opacity:.55}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,213,79,.6)}70%{box-shadow:0 0 0 18px rgba(255,213,79,0)}100%{box-shadow:0 0 0 0 rgba(255,213,79,0)}}
+
+.docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:10px}
+.doc{background:var(--panel-2);border:2px solid var(--stroke);border-radius:12px;padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s}
+.doc:hover{border-color:#2e3a54;transform:translateY(-1px)}
+.doc .badge{background:linear-gradient(135deg,#67e8f9,#fbbf24);color:#000;font-weight:900;border-radius:10px;min-width:38px;text-align:center;padding:6px 10px}
+.doc.selecionado{border-color:#67e8f9;box-shadow:0 0 0 2px rgba(103,232,249,.25) inset}
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:12px;z-index:80}
+.modal{max-width:95vw;max-height:90vh;background:var(--panel);border:1px solid var(--stroke);border-radius:12px;overflow:hidden}
+.modal header{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-bottom:1px solid var(--stroke)}
+.modal header h4{margin:0;color:var(--brand);font-family:Orbitron,sans-serif}
+.modal .content{padding:8px}
+.modal img{display:block;max-width:92vw;max-height:75vh;width:auto;height:auto;border-radius:8px}
+
+.input-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=text]{background:#0c1220;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-family:Orbitron,sans-serif;width:160px}
+.kbd{background:#0d1220;border:1px solid #2a3243;border-bottom-width:2px;padding:2px 6px;border-radius:6px}
+</style>
+
+<style>
+/* Ajuste solicitado: cor verde para textos específicos */
+#btnBuscar, #tabPrincipal, #tabFixo { color: #00ff00 !important; }
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="header-inner">
+    <div class="logo-wrap"><img src="images/logo.png" alt="logo"><span class="brand">Acerto de Contas — Reckoning</span></div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="grid">
+    <section id="sam" class="panel">
+      <div class="panel-header">
+        <h2>Mapa Interativo + Códigos SAM</h2>
+      </div>
+      <div class="panel-body">
+        <div class="tabs">
+          <button class="tab active" id="tabPrincipal">Mapa principal</button>
+          <button class="tab" id="tabFixo">Documento fixo</button>
+        </div>
+        <div class="map-wrap">
+          <img id="mapImg" src="images/mapa.jpg" alt="Mapa principal" loading="lazy">
+          <div id="hotspotLayer" class="hotspot-layer"></div>
+        </div>
+        <p class="note" style="margin-top:8px">
+          Nesta área de jogo você só encontra <strong>3 documentos por partida</strong>. O <strong>4º documento</strong> está sempre no <strong>Documento fixo</strong> (aba ao lado).
+        </p>
+
+        <h3 style="font-family:Orbitron;color:var(--brand);margin:10px 0 6px">Arquivos SAM (ordem numérica)</h3>
+        <div id="docs" class="docs"></div>
+        <div style="margin-top:8px">
+          <div id="senha" class="result"></div>
+          <div id="aviso" class="note"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="periodica" class="panel">
+      <div class="panel-header"><h2>Tabela Periódica</h2></div>
+      <div class="panel-body">
+        <p>Digite o símbolo e toque em <strong>Buscar</strong> (ex.: <span class="kbd">He</span>, <span class="kbd">Na</span>, <span class="kbd">Au</span>).</p>
+        <div class="input-row">
+          <input id="simbolo" maxlength="2" placeholder="Símbolo (ex.: He)" inputmode="text" />
+          <button id="btnBuscar" class="btn tab">Buscar</button>
+        </div>
+        <p id="resultado-periodica" class="result" style="margin-top:6px"></p>
+        <p class="note">Resultado com 3 dígitos: He → 002, C → 006, Au → 079.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modalBackdrop" class="modal-backdrop">
+  <div class="modal">
+    <header>
+      <h4 id="modalTitle">Ponto</h4>
+      <button class="tab" id="modalClose">Fechar</button>
+    </header>
+    <div class="content">
+      <img id="modalImg" src="" alt="Imagem do ponto" loading="lazy">
+    </div>
+  </div>
+</div>
+
+<script>
+// PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js'));
+}
+
+// Periodic
+function normSymbol(str){ if(!str) return ""; const s=str.trim().slice(0,2); return s? s[0].toUpperCase() + (s[1]?s[1].toLowerCase():"") : ""; }
+const elementos = {
+  H:1, He:2, Li:3, Be:4, B:5, C:6, N:7, O:8, F:9, Ne:10,
+  Na:11, Mg:12, Al:13, Si:14, P:15, S:16, Cl:17, Ar:18, K:19, Ca:20,
+  Sc:21, Ti:22, V:23, Cr:24, Mn:25, Fe:26, Co:27, Ni:28, Cu:29, Zn:30,
+  Ga:31, Ge:32, As:33, Se:34, Br:35, Kr:36, Rb:37, Sr:38, Y:39, Zr:40,
+  Nb:41, Mo:42, Tc:43, Ru:44, Rh:45, Pd:46, Ag:47, Cd:48, In:49, Sn:50,
+  Sb:51, Te:52, I:53, Xe:54, Cs:55, Ba:56, La:57, Ce:58, Pr:59, Nd:60,
+  Pm:61, Sm:62, Eu:63, Gd:64, Tb:65, Dy:66, Ho:67, Er:68, Tm:69, Yb:70,
+  Lu:71, Hf:72, Ta:73, W:74, Re:75, Os:76, Ir:77, Pt:78, Au:79, Hg:80,
+  Tl:81, Pb:82, Bi:83, Po:84, At:85, Rn:86, Fr:87, Ra:88, Ac:89, Th:90,
+  Pa:91, U:92, Np:93, Pu:94, Am:95, Cm:96, Bk:97, Cf:98, Es:99, Fm:100,
+  Md:101, No:102, Lr:103, Rf:104, Db:105, Sg:106, Bh:107, Hs:108, Mt:109,
+  Ds:110, Rg:111, Cn:112, Nh:113, Fl:114, Mc:115, Lv:116, Ts:117, Og:118
+};
+const simboloInput = document.getElementById('simbolo');
+const btnBuscar = document.getElementById('btnBuscar');
+const outPeriodica = document.getElementById('resultado-periodica');
+simboloInput.addEventListener('input', e => { e.target.value = normSymbol(e.target.value); });
+btnBuscar.addEventListener('click', () => {
+  const s = normSymbol(simboloInput.value); const n = elementos[s];
+  outPeriodica.textContent = n ? ("Número: " + String(n).padStart(3,'0')) : "Elemento não encontrado.";
+});
+simboloInput.addEventListener('keypress', (e)=>{ if(e.key==='Enter') btnBuscar.click(); });
+
+// Modal
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalImg = document.getElementById('modalImg');
+const modalTitle = document.getElementById('modalTitle');
+document.getElementById('modalClose').addEventListener('click', ()=> modalBackdrop.style.display='none');
+modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) modalBackdrop.style.display='none'; });
+
+// Maps
+const tabPrincipal = document.getElementById('tabPrincipal');
+const tabFixo = document.getElementById('tabFixo');
+const mapImg = document.getElementById('mapImg');
+const layer = document.getElementById('hotspotLayer');
+
+let hotspots = [{"x": 44.971804511278194, "y": 16.85265183302033}, {"x": 54.74624060150376, "y": 26.249676333235232}, {"x": 73.26127819548873, "y": 33.493216052150885}, {"x": 59.3515037593985, "y": 37.31075725536319}, {"x": 23.731203007518797, "y": 50.72109430254487}, {"x": 14.802631578947366, "y": 51.30840833380831}]; // principal
+const hotspotImages = { 1:'images/p1.jpg', 2:'images/p2.jpg', 3:'images/p3.jpg', 4:'images/p4.jpg', 5:'images/p5.jpg', 6:'images/p6.jpg' };
+
+const fixedHotspot = [{x:35, y:50, img:'images/fixo.jpg', title:'Documento fixo'}]; // estimado; pode ajustar
+
+function setActiveTab(fixed){
+  tabPrincipal.classList.toggle('active', !fixed);
+  tabFixo.classList.toggle('active', fixed);
+  mapImg.src = fixed ? 'images/mapa_fixo.jpg' : 'images/mapa.jpg';
+  mapImg.alt = fixed ? 'Mapa — Documento fixo' : 'Mapa principal';
+  renderHotspots(fixed);
+}
+
+function renderHotspots(isFixed=false){
+  layer.innerHTML = "";
+  const data = isFixed ? fixedHotspot : hotspots;
+  data.forEach((h,i)=>{
+    const el = document.createElement('div');
+    el.className = 'hotspot';
+    el.style.left = h.x + '%';
+    el.style.top = h.y + '%';
+    el.title = (isFixed ? (h.title||'Documento fixo') : ('Ponto ' + (i+1)));
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(isFixed){
+        modalImg.src = h.img;
+        modalTitle.textContent = 'Documento fixo';
+      }else{
+        const idx = i+1;
+        modalImg.src = hotspotImages[idx] || '';
+        modalTitle.textContent = 'Ponto ' + idx;
+      }
+      modalBackdrop.style.display='flex';
+    });
+    layer.appendChild(el);
+  });
+}
+tabPrincipal.addEventListener('click', ()=> setActiveTab(false));
+tabFixo.addEventListener('click', ()=> setActiveTab(true));
+window.addEventListener('resize', ()=> renderHotspots(tabFixo.classList.contains('active')));
+mapImg.addEventListener('load', ()=> renderHotspots(tabFixo.classList.contains('active')));
+
+// SAM — lista numérica fixa; senha auto por cronologia (sem bloquear seleção).
+const SAM = [
+  { nome: "Coleira do Notso", data: "1985-07-15", codigo: 1 },
+  { nome: "Katana", data: "1985-12-08", codigo: 2 },
+  { nome: "Cachecol", data: "1985-08-21", codigo: 3 },
+  { nome: "Relógio de Pulso", data: "1985-09-02", codigo: 4 },
+  { nome: "Óculos de Combate", data: "1985-10-12", codigo: 5 },
+  { nome: "Crachá do BND", data: "1985-06-28", codigo: 6 }
+];
+const docsWrap = document.getElementById('docs');
+const outSenha = document.getElementById('senha');
+const aviso = document.getElementById('aviso');
+let selecionados = new Set();
+const MAX_SELECT = 4;
+
+function renderDocs(){
+  docsWrap.innerHTML = "";
+  [...SAM].sort((a,b)=>a.codigo-b.codigo).forEach((d)=>{
+    const el = document.createElement('div');
+    el.className = 'doc';
+    el.innerHTML = `<span class="badge">${d.codigo}</span> ${d.nome}`;
+    el.addEventListener('click', ()=>{
+      const key = d.codigo;
+      if(el.classList.contains('selecionado')){ el.classList.remove('selecionado'); selecionados.delete(key); }
+      else {
+        if(selecionados.size>=MAX_SELECT) return; // mantém sem botão nem bloqueios extras
+        el.classList.add('selecionado'); selecionados.add(key);
+      }
+      atualizarSenha();
+    });
+    docsWrap.appendChild(el);
+  });
+}
+function atualizarSenha(){
+  const lista = Array.from(selecionados).map(cod=> SAM.find(d=>d.codigo===cod));
+  lista.sort((a,b)=> new Date(a.data)-new Date(b.data)); // ordem cronológica
+  const senha = lista.map(d=>d.codigo).join("");
+  outSenha.textContent = senha ? ("Senha: " + senha) : "";
+  aviso.textContent = (selecionados.size!==4) ? "Selecione exatamente 4 documentos (3 do mapa + 1 do Documento fixo)." : "";
+}
+renderDocs();
+setActiveTab(false);
+</script>
+</body>
+</html>
