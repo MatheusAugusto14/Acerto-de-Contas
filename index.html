@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta name="color-scheme" content="light">
-
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Reckoning — Acerto de Contas</title>
@@ -12,7 +10,7 @@
 <style>
 :root{
   --bg:#0b1016; --panel:#0f1420; --panel-2:#0c111b; --stroke:#1b2333;
-  --brand:#ffd54f; --accent:#ff7043; --text: #e6edf3 !important; --muted:#9aa7b7;
+  --brand:#ffd54f; --accent:#ff7043; --text:#e6edf3; --muted:#9aa7b7;
   --ok:#21e6a1;
 }
 *{box-sizing:border-box}
@@ -56,19 +54,21 @@ header.site{position:sticky;top:0;background:linear-gradient(180deg,#0c111b,#0b1
 .modal img{display:block;max-width:92vw;max-height:75vh;width:auto;height:auto;border-radius:8px}
 
 .input-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-input[type=text]{background:#0c1220;color:var(--text);border:1px solid var(--stroke);border-radius:10px;padding:10px;font-family:Orbitron,sans-serif;width:160px}
+input[type=text]{background:#ffffff;color:#000000;border:1px solid var(--stroke);border-radius:10px;padding:10px;font-family:Orbitron,sans-serif;width:160px}
 .kbd{background:#0d1220;border:1px solid #2a3243;border-bottom-width:2px;padding:2px 6px;border-radius:6px}
+
+textarea{background:#ffffff;color:#000000;}
 </style>
 
 <style>
 /* Ajuste solicitado: cor verde para textos específicos */
 #btnBuscar, #tabPrincipal, #tabFixo { color: #00ff00 !important; }
+
+textarea{background:#ffffff;color:#000000;}
 </style>
 </head>
 <body>
 <header class="site">
-<meta name="color-scheme" content="light">
-
   <div class="header-inner">
     <div class="logo-wrap"><img src="images/logo.png" alt="logo"><span class="brand">Acerto de Contas — Reckoning</span></div>
   </div>
@@ -121,8 +121,6 @@ input[type=text]{background:#0c1220;color:var(--text);border:1px solid var(--str
 <div id="modalBackdrop" class="modal-backdrop">
   <div class="modal">
     <header>
-<meta name="color-scheme" content="light">
-
       <h4 id="modalTitle">Ponto</h4>
       <button class="tab" id="modalClose">Fechar</button>
     </header>

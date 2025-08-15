@@ -1,24 +1,36 @@
-const CACHE_NAME = "reckoning-cache-v2";
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./icon-192.png",
-  "./icon-512.png",
-  "./images/logo.png",
-  "./images/mapa.jpg",
-  "./images/mapa_fixo.jpg",
-  "./images/fixo.jpg",
-  "./images/p1.jpg","./images/p2.jpg","./images/p3.jpg","./images/p4.jpg","./images/p5.jpg","./images/p6.jpg"
-];
+// Updated to prefer network-first and avoid stale caches
+const CACHE_NAME = "reckoning-cache-network-first-v1";
+
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  // Activate updated SW immediately
   self.skipWaiting();
 });
+
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))));
-  self.clients.claim();
+  // Clear ALL existing caches to avoid using old versions
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => self.clients.claim())
+  );
 });
+
 self.addEventListener("fetch", (event) => {
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+  if (event.request.method !== "GET") return;
+  event.respondWith((async () => {
+    try {
+      // Always try network first with no-store to bypass HTTP caches
+      const fresh = await fetch(event.request, { cache: "no-store" });
+      // Optionally update a fresh cache for offline fallback
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, fresh.clone());
+      } catch (e) {}
+      return fresh;
+    } catch (err) {
+      // Fallback to cache if offline
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      // As a last resort, return a generic offline response
+      return new Response("Offline", { status: 503, statusText: "Offline" });
+    }
+  })());
 });
