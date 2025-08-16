@@ -72,6 +72,108 @@ input[type="text"], input[type="search"], input[type="number"], textarea {
 
 textarea{background:#ffffff;color:#000000;}
 </style>
+
+<style>
+/* === Autocomplete destacado para a Tabela Periódica === */
+#simbolo {
+  border: 2px solid #2196F3 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  outline: none;
+}
+.autocomplete-suggestions {
+  position: relative; /* fallback se não houver container relativo */
+  background: #fff;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  margin-top: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+  padding: 4px 0;
+  list-style: none;
+}
+.autocomplete-suggestions li {
+  padding: 8px 12px;
+  font-size: 16px;
+  color: #1b1b1b; /* fonte escura pra não confundir com fundo */
+  cursor: pointer;
+}
+.autocomplete-suggestions li:hover {
+  background: #e3f2fd;
+}
+</style>
+
+<style>
+/* ==== Busca adaptável (claro/escuro) e sugestões com código ==== */
+#periodica .input-row { position: relative; }
+
+#simbolo {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #3b82f6;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #2d2d2d, #3a3a3a);
+  font-size: 16px;
+  color: #e5e5e5; /* cinza claro, não branco puro */
+  outline: none;
+  transition: all 0.25s ease;
+}
+#simbolo::placeholder {
+  color: #a1a1a1; /* cinza médio */
+  font-style: italic;
+}
+#simbolo:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.6);
+}
+
+/* Dropdown */
+#periodic-suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  background: #111827;            /* cinza escuro */
+  border: 1px solid #374151;       /* cinza médio */
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.25);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;                   /* controlado via JS */
+}
+#periodic-suggestions .suggest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  color: #f3f4f6; /* off-white */
+  cursor: pointer;
+}
+#periodic-suggestions .suggest-item .sym {
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+#periodic-suggestions .suggest-item .code {
+  font-variant-numeric: tabular-nums;
+  background: #1f2937;
+  color: #e5e7eb;
+  padding: 2px 10px;
+  border: 1px solid #374151;
+  border-radius: 9999px;
+  min-width: 2.8rem;
+  text-align: center;
+}
+#periodic-suggestions .suggest-item:hover {
+  background: #3b82f6;
+  color: #fff;
+}
+</style>
+
 </head>
 <body>
 <header class="site">
@@ -82,6 +184,21 @@ textarea{background:#ffffff;color:#000000;}
 
 <div class="container">
   <div class="grid">
+    <section id="periodica" class="panel">
+      <div class="panel-header"><h2>Tabela Periódica</h2></div>
+      <div class="panel-body">
+        <p>Digite o símbolo e toque em <strong>Buscar</strong> (ex.: <span class="kbd">He</span>, <span class="kbd">Na</span>, <span class="kbd">Au</span>).</p>
+        <div class="input-row">
+          <input id="simbolo" maxlength="2" placeholder="Símbolo (ex.: He)" inputmode="text" />
+<ul id="periodic-suggestions" class="autocomplete-suggestions"></ul>
+
+          <button id="btnBuscar" class="btn tab">Buscar</button>
+        </div>
+        <p id="resultado-periodica" class="result" style="margin-top:6px"></p>
+        <p class="note">Resultado com 3 dígitos: He → 002, C → 006, Au → 079.</p>
+      </div>
+    </section>
+
     <section id="sam" class="panel">
       <div class="panel-header">
         <h2>Mapa Interativo + Códigos SAM</h2>
@@ -105,19 +222,6 @@ textarea{background:#ffffff;color:#000000;}
           <div id="senha" class="result"></div>
           <div id="aviso" class="note"></div>
         </div>
-      </div>
-    </section>
-
-    <section id="periodica" class="panel">
-      <div class="panel-header"><h2>Tabela Periódica</h2></div>
-      <div class="panel-body">
-        <p>Digite o símbolo e toque em <strong>Buscar</strong> (ex.: <span class="kbd">He</span>, <span class="kbd">Na</span>, <span class="kbd">Au</span>).</p>
-        <div class="input-row">
-          <input id="simbolo" maxlength="2" placeholder="Símbolo (ex.: He)" inputmode="text" />
-          <button id="btnBuscar" class="btn tab">Buscar</button>
-        </div>
-        <p id="resultado-periodica" class="result" style="margin-top:6px"></p>
-        <p class="note">Resultado com 3 dígitos: He → 002, C → 006, Au → 079.</p>
       </div>
     </section>
   </div>
@@ -266,5 +370,81 @@ function atualizarSenha(){
 renderDocs();
 setActiveTab(false);
 </script>
+
+
+
+<script>
+(() => {
+  // Lista de elementos por posição (índice + 1 vira o "código" de 3 dígitos)
+  const elements = [
+    "H","He","Li","Be","B","C","N","O","F","Ne",
+    "Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca",
+    "Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn",
+    "Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr",
+    "Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn",
+    "Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd",
+    "Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb",
+    "Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg",
+    "Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th",
+    "Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm",
+    "Md","No","Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds",
+    "Rg","Cn","Nh","Fl","Mc","Lv","Ts","Og"
+  ];
+
+  const input = document.getElementById("simbolo");
+  const list = document.getElementById("periodic-suggestions");
+  if (!input || !list) return;
+
+  function clearList() {
+    list.innerHTML = "";
+    list.style.display = "none";
+  }
+  function showList() {
+    list.style.display = "block";
+  }
+
+  input.addEventListener("input", () => {
+    const q = (input.value || "").trim().toLowerCase();
+    clearList();
+    if (!q) return;
+
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < elements.length; i++) {
+      const sym = elements[i];
+      if (sym.toLowerCase().startsWith(q)) {
+        const code = String(i + 1).padStart(3, "0");
+        const li = document.createElement("li");
+        li.className = "suggest-item";
+        const left = document.createElement("span");
+        left.className = "sym";
+        left.textContent = sym;
+        const right = document.createElement("span");
+        right.className = "code";
+        right.textContent = code;
+        li.appendChild(left);
+        li.appendChild(right);
+        li.addEventListener("click", () => {
+          input.value = sym;
+          clearList();
+          const btn = document.getElementById("btnBuscar");
+          if (btn) btn.click();
+        });
+        frag.appendChild(li);
+      }
+    }
+    if (frag.childNodes.length > 0) {
+      list.appendChild(frag);
+      showList();
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!list.contains(e.target) && e.target !== input) {
+      clearList();
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
